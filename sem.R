@@ -1,5 +1,8 @@
 library(rpart)
 library(randomForest)
+library(e1071)
+library(kknn)
+library(nnet)
 
 mae <- function(observed, predicted)
 {
@@ -29,7 +32,13 @@ raw_data$DATE=as.numeric(raw_data$DATE)
 
 missing=c(na.omit)
 
-reg.models=c(lm,rpart,randomForest)
+nn=function(dist,data){
+	print(dist)
+	nnet(dist,data,size=5, decay = 1e-4, maxit = 10000, linout = T)
+}
+
+reg.models=c(lm,rpart,randomForest,svm,nn)
+reg.m.names=c("lin reg","tree","forest","svm","nnet")
 
 for(i in 1:length(missing)){
 	data=missing[[i]](raw_data)
@@ -39,9 +48,11 @@ for(i in 1:length(missing)){
 	for(j in 1:length(reg.models)){
 		m=reg.models[[j]](O3_max ~ DATE + TRAJ + SHORT_TRAJ + AMP_TMP2M_mean + AMP_RH_mean + AMP_WS_mean + AMP_PREC_sum ,learn)
 		prediction=predict(m,test)
-		print(mae(test$O3_max,prediction))
-		print(mse(test$O3_max,prediction))
-		print(rmae(test$O3_max,prediction,mean(learn$O3_max)))
+		print(reg.m.names[[j]])
+		#print(mae(test$O3_max,prediction))
+		#print(mse(test$O3_max,prediction))
+		#print(rmae(test$O3_max,prediction,mean(learn$O3_max)))
+		print("rmse:")
 		print(rmse(test$O3_max,prediction,mean(learn$O3_max)))
 		print('**********************************')
 	}
