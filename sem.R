@@ -32,29 +32,29 @@ raw_data$DATE=as.numeric(raw_data$DATE)
 
 missing=c(na.omit)
 
-nn=function(dist,data){
-	print(dist)
-	nnet(dist,data,size=5, decay = 1e-4, maxit = 10000, linout = T)
+coreTree=function(dist,data){
+	CoreModel(dist,data, model="regTree", modelTypeReg = 1)
 }
 
-reg.models=c(lm,rpart,randomForest,svm,nn)
-reg.m.names=c("lin reg","tree","forest","svm","nnet")
+reg.models=c(lm,rpart,coreTree,randomForest,svm)
+reg.m.names=c("lin reg","tree","tree2","forest","svm")
 
 for(i in 1:length(missing)){
 	data=missing[[i]](raw_data)
-	sel <- sample(1:nrow(data), size=as.integer(nrow(data)*0.7), replace=F)
-	learn <- data[sel,]
-	test <- data[-sel,]
-	for(j in 1:length(reg.models)){
-		m=reg.models[[j]](O3_max ~ DATE + TRAJ + SHORT_TRAJ + AMP_TMP2M_mean + AMP_RH_mean + AMP_WS_mean + AMP_PREC_sum ,learn)
-		prediction=predict(m,test)
-		print(reg.m.names[[j]])
-		#print(mae(test$O3_max,prediction))
-		#print(mse(test$O3_max,prediction))
-		#print(rmae(test$O3_max,prediction,mean(learn$O3_max)))
-		print("rmse:")
-		print(rmse(test$O3_max,prediction,mean(learn$O3_max)))
-		print('**********************************')
+	for(k in 1:10){                     #cross validation
+		sel <- sample(1:nrow(data), size=as.integer(nrow(data)*0.8), replace=F)
+		learn <- data[sel,]
+		test <- data[-sel,]
+		for(j in 1:length(reg.models)){
+			m=reg.models[[j]](O3_max ~ DATE + TRAJ + SHORT_TRAJ + AMP_TMP2M_mean + AMP_RH_mean + AMP_WS_mean + AMP_PREC_sum ,learn)
+			prediction=predict(m,test)
+			print(reg.m.names[[j]])
+			#print(mae(test$O3_max,prediction))
+			#print(mse(test$O3_max,prediction))
+			#print(rmae(test$O3_max,prediction,mean(learn$O3_max)))
+			print(rmse(test$O3_max,prediction,mean(learn$O3_max)))
+			print('**********************************')
+		}
 	}
 }
 
