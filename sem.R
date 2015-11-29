@@ -39,29 +39,38 @@ coreTree=function(dist,data){
 
 reg.models=c(lm,rpart,coreTree,randomForest,svm)
 reg.m.names=c("lin reg","tree","tree2","forest","svm")
-reg.rmse=0*(1:length(reg.models))
 
-cross.val=5
+cross.val=1
+reg.dists=c(O3_max ~ DATE + TRAJ + SHORT_TRAJ + AMP_TMP2M_mean + AMP_RH_mean + AMP_WS_mean + AMP_PREC_sum,
+            PM10   ~ DATE + TRAJ + SHORT_TRAJ + AMP_TMP2M_mean + AMP_RH_mean + AMP_WS_mean + AMP_PREC_sum,
+            PM2.5  ~ DATE + TRAJ + SHORT_TRAJ + AMP_TMP2M_mean + AMP_RH_mean + AMP_WS_mean + AMP_PREC_sum)
+reg.test.idx=c("O3_max","PM10","PM2.5")
+reg.test.idx=c(8,9,10)
+
 
 for(i in 1:length(missing)){
 	data=missing[[i]](raw_data)
-	for(k in 1:cross.val){                     #cross validation
-		sel <- sample(1:nrow(data), size=as.integer(nrow(data)*0.8), replace=F)
-		learn <- data[sel,]
-		test <- data[-sel,]
-		for(j in 1:length(reg.models)){
-			m=reg.models[[j]](O3_max ~ DATE + TRAJ + SHORT_TRAJ + AMP_TMP2M_mean + AMP_RH_mean + AMP_WS_mean + AMP_PREC_sum ,learn)
-			prediction=predict(m,test)
-    	#print(mae(test$O3_max,prediction))
-    	#print(mse(test$O3_max,prediction))
-    	#print(rmae(test$O3_max,prediction,mean(learn$O3_max)))
-			reg.rmse[[j]]=reg.rmse[[j]]+rmse(test$O3_max,prediction,mean(learn$O3_max))
+	for(l in 1:length(reg.dists)){
+    reg.rmse=0*(1:length(reg.models))
+    for(k in 1:cross.val){                     #cross validation
+    	sel <- sample(1:nrow(data), size=as.integer(nrow(data)*0.8), replace=F)
+    	learn <- data[sel,]
+    	test <- data[-sel,]
+  		for(j in 1:length(reg.models)){
+  			m=reg.models[[j]](reg.dists[[l]] ,learn)
+  			prediction=predict(m,test)
+      	#print(mae(test$O3_max,prediction))
+      	#print(mse(test$O3_max,prediction))
+      	#print(rmae(test$O3_max,prediction,mean(learn$O3_max)))
+  			reg.rmse[[j]]=reg.rmse[[j]]+rmse(test[,reg.test.idx[l]],prediction,mean(learn[,reg.test.idx[l]]))
+  		}
 		}
-	}
-	for(j in 1:length(reg.models)){
-  	print(reg.m.names[[j]])
-  	print(reg.rmse[[j]]/cross.val)
-  	print('**********************************')
+	  print("*********************************")
+	  print(reg.dists[[l]])
+  	for(j in 1:length(reg.models)){
+  	  print(reg.m.names[[j]])
+  	  print(reg.rmse[[j]]/cross.val)
+  	}
 	}
 }
 
