@@ -40,22 +40,25 @@ coreTree=function(dist,data){
 reg.models=c(lm,rpart,coreTree,randomForest,svm)
 reg.m.names=c("lin reg","tree","tree2","forest","svm")
 
-cross.val=1
+cross.val=10
 reg.dists=c(O3_max ~ DATE + TRAJ + SHORT_TRAJ + AMP_TMP2M_mean + AMP_RH_mean + AMP_WS_mean + AMP_PREC_sum,
             PM10   ~ DATE + TRAJ + SHORT_TRAJ + AMP_TMP2M_mean + AMP_RH_mean + AMP_WS_mean + AMP_PREC_sum,
+            PM2.5  ~ DATE + TRAJ +              AMP_TMP2M_mean + AMP_RH_mean + AMP_WS_mean + AMP_PREC_sum,
             PM2.5  ~ DATE + TRAJ + SHORT_TRAJ + AMP_TMP2M_mean + AMP_RH_mean + AMP_WS_mean + AMP_PREC_sum)
-reg.test.idx=c("O3_max","PM10","PM2.5")
-reg.test.idx=c(8,9,10)
 
+reg.test.idx=c("O3_max","PM10","PM2.5")
+#reg.test.idx=c(8,9,10)
 
 for(i in 1:length(missing)){
 	data=missing[[i]](raw_data)
 	for(l in 1:length(reg.dists)){
     reg.rmse=0*(1:length(reg.models))
+    reg.attrs=c(0)
     for(k in 1:cross.val){                     #cross validation
     	sel <- sample(1:nrow(data), size=as.integer(nrow(data)*0.8), replace=F)
     	learn <- data[sel,]
     	test <- data[-sel,]
+  	  reg.attrs=reg.attrs+attrEval(reg.dists[[l]], learn, "RReliefFsqrDistance")
   		for(j in 1:length(reg.models)){
   			m=reg.models[[j]](reg.dists[[l]] ,learn)
   			prediction=predict(m,test)
@@ -67,6 +70,7 @@ for(i in 1:length(missing)){
 		}
 	  print("*********************************")
 	  print(reg.dists[[l]])
+	  print(reg.attrs)
   	for(j in 1:length(reg.models)){
   	  print(reg.m.names[[j]])
   	  print(reg.rmse[[j]]/cross.val)
