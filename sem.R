@@ -4,7 +4,7 @@ library(e1071)
 library(kknn)
 library(nnet)
 library(CORElearn)
-
+library(ipred)
 mae <- function(observed, predicted)
 {
 	mean(abs(observed - predicted))
@@ -30,7 +30,7 @@ raw_data <- read.table("pollution.txt", header = T, sep=",")
 raw_data$TRAJ=as.factor(raw_data$TRAJ)
 raw_data$SHORT_TRAJ=as.factor(raw_data$SHORT_TRAJ)
 raw_data$DATE=as.numeric(raw_data$DATE)
-
+atributi<-names(raw_data)
 missing=c(na.omit)
 
 coreTree=function(dist,data){
@@ -39,6 +39,7 @@ coreTree=function(dist,data){
 
 reg.models=c(lm,rpart,coreTree,randomForest,svm)
 reg.m.names=c("lin reg","tree","tree2","forest","svm")
+cla.models<-c("tree", "rf", "knn", "bayes")
 
 cross.val=10
 reg.dists=c(O3_max ~ DATE + TRAJ + SHORT_TRAJ + AMP_TMP2M_mean + AMP_RH_mean + AMP_WS_mean + AMP_PREC_sum,
@@ -49,8 +50,12 @@ reg.dists=c(O3_max ~ DATE + TRAJ + SHORT_TRAJ + AMP_TMP2M_mean + AMP_RH_mean + A
 reg.test.idx=c("O3_max","PM10","PM2.5")
 #reg.test.idx=c(8,9,10)
 
+#za hitrejse izvajanje
+class<-T
+regre<-T
 for(i in 1:length(missing)){
 	data=missing[[i]](raw_data)
+	if(regre){
 	for(l in 1:length(reg.dists)){
     reg.rmse=0*(1:length(reg.models))
     reg.attrs=c(0)
@@ -75,6 +80,37 @@ for(i in 1:length(missing)){
   	  print(reg.m.names[[j]])
   	  print(reg.rmse[[j]]/cross.val)
   	}
+	}
+	}
+	#klasifikacija
+	if(class){
+	indexO3<-match("O3_max",atributi)
+	data[,indexO3]<-cut(data[,indexO3], c(-Inf, 60, 120, 180, Inf), labels=c("LOW", "MEDIUM", "HIGH", "EXTREME"))
+	sel <- sample(1:nrow(data), size=as.integer(nrow(data)*0.8), replace=F)
+	learn <- data[sel,]
+	test <- data[-sel,]
+	
+	maj.class <- which.max(table(learn$O3_max))
+	ca.vals <- table(test$O3_max)[maj.class]/nrow(test)
+	observed <- test$O3_max
+	 cv.res <- vector()
+	mymodel <- function(formula, data, target.model){CoreModel(formula, data, model=target.model)}
+	mypredict <- function(object, newdata) {pred <- predict(object, newdata)$class; destroyModels(object); pred}
+	
+	
+	 for (m in cla.models)
+	 {
+	 obj <- CoreModel(O3_max ~ ., learn, model=m)
+	 predicted <- predict(obj, test, type="class")
+	 tab <- table(observed, predicted)
+	 ca.vals <- c(ca.vals, sum(diag(tab))/sum(tab))
+	 res <- errorest(O3_max~., data=data, model = mymodel, predict = mypredict, target.model=m)
+	cv.res <- c(cv.res, 1-res$error)
+	 }
+	 names(ca.vals)<-c("majority", "tree", "rf", "knn", "bayes")
+	print(ca.vals)
+	names(cv.res) <- cla.models
+	print(cv.res)
 	}
 }
 
