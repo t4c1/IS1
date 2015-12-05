@@ -164,15 +164,14 @@ cla.models<-c("tree", "rf", "knn", "bayes")
 reg.n.models=length(reg.models)
 
 cross.val=10
-reg.dists=c(O3_max ~ DATE + TRAJ + SHORT_TRAJ + AMP_TMP2M_mean + AMP_RH_mean + AMP_WS_mean + AMP_PREC_sum,
-            #PM10   ~ DATE + TRAJ + SHORT_TRAJ + AMP_TMP2M_mean + AMP_RH_mean + AMP_WS_mean + AMP_PREC_sum,
+reg.dists=c(O3_max ~ DATE + TRAJ + SHORT_TRAJ + AMP_TMP2M_mean + AMP_RH_mean + AMP_WS_mean + AMP_PREC_sum+SEASONS+YEAR+MONTHS+DAY+DAYINYEAR,
+            #PM10   ~ DATE + TRAJ + SHORT_TRAJ + AMP_TMP2M_mean + AMP_RH_mean + AMP_WS_mean + AMP_PREC_sum+SEASONS+YEAR+MONTHS+DAY+DAYINYEAR,
             #PM2.5  ~ DATE + TRAJ +              AMP_TMP2M_mean + AMP_RH_mean + AMP_WS_mean + AMP_PREC_sum,
             PM2.5  ~ DATE + TRAJ + SHORT_TRAJ + AMP_TMP2M_mean + AMP_RH_mean + AMP_WS_mean + AMP_PREC_sum)
 reg.class=c(O3_max ~ DATE + TRAJ + SHORT_TRAJ + AMP_TMP2M_mean + AMP_RH_mean + AMP_WS_mean + AMP_PREC_sum+SEASONS+YEAR+MONTHS+DAY+DAYINYEAR,
             PM10   ~ DATE + TRAJ + SHORT_TRAJ + AMP_TMP2M_mean + AMP_RH_mean + AMP_WS_mean + AMP_PREC_sum+SEASONS+YEAR+MONTHS+DAY+DAYINYEAR)
 reg.test.idx=c("O3_max","PM2.5")
 reg.n.comb=2
-
 
 reg.weights=1/c(0.37,0.62,0.43,0.36,0.28,0.32)**15
 reg.weights=reg.weights/sum(reg.weights)
@@ -234,7 +233,7 @@ for(i in 1:length(missing)){
 		print("PM10")
 		data2<-data
 		data2[,9]<-cut(data[,9], c(-Inf, 35, 50, Inf), labels=c("LOW", "MODERATE", "HIGH"))
-		klasifikacija(data=data2,indexObserved =9 ,index=2,odstotek=0,8,cross=10)
+		klasifikacija(data=data2,indexObserved =9 ,index=2,odstotek=0.8,cross=10)
 	}
 }
 
