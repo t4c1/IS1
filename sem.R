@@ -173,12 +173,13 @@ reg.class=c(O3_max ~ DATE + TRAJ + SHORT_TRAJ + AMP_TMP2M_mean + AMP_RH_mean + A
 reg.test.idx=c("O3_max","PM2.5")
 reg.n.comb=2
 
+
 reg.weights=1/c(0.37,0.62,0.43,0.36,0.28,0.32)**15
 reg.weights=reg.weights/sum(reg.weights)
 
 #za hitrejse izvajanje
-class<-T
-regre<-F
+class<-F
+regre<-T
 for(i in 1:length(missing)){
 	data=missing[[i]](raw_data)
 	if(regre){
