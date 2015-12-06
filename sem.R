@@ -185,7 +185,7 @@ reg.weights=reg.weights/sum(reg.weights)
 
 #za hitrejse izvajanje
 class<-T
-regre<-F
+regre<-T
 for(i in 1:length(missing)){
 	data=missing[[i]](raw_data)
 	print(length(data[[1]]))
